@@ -1,19 +1,18 @@
-import 'package:barbud_frontend/pages/home.dart';
 import 'package:flutter/material.dart';
+import 'pages/auth.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const BarBudApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class BarBudApp extends StatelessWidget {
+  const BarBudApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: HomePage()
+      home: AuthPage(),
     );
   }
 }
