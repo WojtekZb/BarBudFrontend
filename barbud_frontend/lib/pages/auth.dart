@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:barbud_frontend/pages/home.dart' as home;
+import 'package:barbud_frontend/services/api_service.dart';
 
 class AuthPage extends StatefulWidget {
   const AuthPage({super.key});
@@ -31,17 +33,23 @@ class _AuthPageState extends State<AuthPage> {
   }
 
   void submit() {
-    if (isRegister) {
-      print("Register pressed");
-      print("Email: ${emailController.text}");
-      print("Username: ${usernameController.text}");
-      print("Password: ${passwordController.text}");
-      print("Confirm password: ${confirmPasswordController.text}");
-    } else {
-      print("Login pressed");
-      print("Email: ${emailController.text}");
-      print("Password: ${passwordController.text}");
-    }
+    ElevatedButton(
+                onPressed: () async {
+                  try {
+                    final result = await ApiService.register(
+                      email: this.emailController.text,
+                      password: this.passwordController.text,
+                    );
+
+                    print("REGISTER OK:");
+                    print(result);
+                  } catch (e) {
+                    print("REGISTER ERROR:");
+                    print(e);
+                  }
+                },
+                child: const Text("Test Register"),
+              );
   }
 
   @override
