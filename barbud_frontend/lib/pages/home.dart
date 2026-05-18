@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../services/api_service.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -22,24 +21,6 @@ class HomePage extends StatelessWidget {
               ),
 
               const SizedBox(height: 20),
-
-              ElevatedButton(
-                onPressed: () async {
-                  try {
-                    final result = await ApiService.register(
-                      email: "test@mail.com",
-                      password: "Password123!",
-                    );
-
-                    print("REGISTER OK:");
-                    print(result);
-                  } catch (e) {
-                    print("REGISTER ERROR:");
-                    print(e);
-                  }
-                },
-                child: const Text("Test Register"),
-              ),
             ],
           ),
         ),

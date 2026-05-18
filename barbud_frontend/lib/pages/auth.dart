@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:barbud_frontend/pages/home.dart' as home;
-import 'package:barbud_frontend/services/api_service.dart';
+import 'package:barbud_frontend/services/auth_service.dart';
+import 'package:barbud_frontend/pages/home.dart';
 
 class AuthPage extends StatefulWidget {
   const AuthPage({super.key});
@@ -32,25 +32,47 @@ class _AuthPageState extends State<AuthPage> {
     });
   }
 
-  void submit() {
-    ElevatedButton(
-                onPressed: () async {
-                  try {
-                    final result = await ApiService.register(
-                      email: this.emailController.text,
-                      password: this.passwordController.text,
-                    );
+Future<void> submit() async {
+  try {
+    Map<String, dynamic> result;
 
-                    print("REGISTER OK:");
-                    print(result);
-                  } catch (e) {
-                    print("REGISTER ERROR:");
-                    print(e);
-                  }
-                },
-                child: const Text("Test Register"),
-              );
+    if (isRegister) {
+      result = await AuthService.register(
+        email: emailController.text,
+        username: usernameController.text,
+        password: passwordController.text,
+      );
+    } else {
+      result = await AuthService.login(
+        email: emailController.text,
+        password: passwordController.text,
+      );
+    }
+
+    print("AUTH OK:");
+    print(result);
+
+    if (!mounted) return;
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const HomePage(),
+      ),
+    );
+  } catch (e) {
+    print("AUTH FAILED:");
+    print(e);
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Login/Register failed: $e"),
+      ),
+    );
   }
+}
 
   @override
   Widget build(BuildContext context) {

@@ -1,11 +1,23 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-class ApiService {
-  static const String baseUrl = "http://localhost:8080";
+class AuthService {
+  static const String baseUrl = "http://145.220.72.160:8080";
+  static const FlutterSecureStorage storage = FlutterSecureStorage();
+
+  static void save(Map<String, dynamic> where,String Saving) async {
+    if (where[Saving] != null) {
+        await storage.write(
+          key: Saving,
+          value: where[Saving],
+        );
+      }
+  }
 
   static Future<Map<String, dynamic>> register({
     required String email,
+    required String username,
     required String password,
   }) async {
     final url = Uri.parse("$baseUrl/auth/register");
@@ -17,6 +29,7 @@ class ApiService {
       },
       body: jsonEncode({
         "email": email,
+        "username": username,
         "password": password,
       }),
     );
@@ -28,7 +41,16 @@ class ApiService {
         };
       }
 
-      return jsonDecode(response.body);
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+
+      save(data, "id");
+      save(data, "username");
+      save(data, "accessToken");
+      save(data, "accessExpiresIn");
+      save(data, "refreshToken");
+      save(data, "refreshExpiresIn");
+
+      return data;
     }
 
     throw Exception("Register failed: ${response.statusCode} ${response.body}");
@@ -52,7 +74,17 @@ class ApiService {
     );
 
     if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+
+      save(data, "id");
+      save(data, "username");
+      save(data, "accessToken");
+      save(data, "accessExpiresIn");
+      save(data, "refreshToken");
+      save(data, "refreshExpiresIn");
+
+      return data;
     }
 
     throw Exception("Login failed: ${response.statusCode} ${response.body}");
@@ -74,9 +106,24 @@ class ApiService {
     );
 
     if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+      
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+
+      save(data, "id");
+      save(data, "username");
+      save(data, "accessToken");
+      save(data, "accessExpiresIn");
+      save(data, "refreshToken");
+      save(data, "refreshExpiresIn");
+
+      return data;
     }
 
     throw Exception("Refresh failed: ${response.statusCode} ${response.body}");
   }
+
+  static Future<void> logout() async {
+    await storage.deleteAll;
+  }
+
 }
