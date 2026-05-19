@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:barbud_frontend/services/auth_service.dart';
-import 'package:barbud_frontend/pages/home.dart';
 
 class AuthPage extends StatefulWidget {
   const AuthPage({super.key});
@@ -54,12 +53,7 @@ Future<void> submit() async {
 
     if (!mounted) return;
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const HomePage(),
-      ),
-    );
+    Navigator.pushReplacementNamed(context, "/home");
   } catch (e) {
     print("AUTH FAILED:");
     print(e);
