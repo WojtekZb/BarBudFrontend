@@ -122,8 +122,24 @@ class AuthService {
     throw Exception("Refresh failed: ${response.statusCode} ${response.body}");
   }
 
+  static Future<bool> tryRefreshOnStartup() async {
+    final oldRefreshToken = await storage.read(key: "refreshToken");
+
+    if (oldRefreshToken == null || oldRefreshToken.isEmpty) {
+      return false;
+    }
+
+    try {
+      await refresh(refreshToken: oldRefreshToken);
+      return true;
+    } catch (e) {
+      await logout();
+      return false;
+    }
+  }
+
   static Future<void> logout() async {
-    await storage.deleteAll;
+    storage.deleteAll();
   }
 
 }

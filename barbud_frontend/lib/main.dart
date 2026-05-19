@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:barbud_frontend/pages/auth.dart';
-import 'package:barbud_frontend/pages/home.dart';
+
+import 'pages/startup.dart';
 
 void main() {
   runApp(const BarBudApp());
@@ -11,15 +11,9 @@ class BarBudApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       debugShowCheckedModeBanner: false,
-
-      initialRoute: "/auth",
-
-      routes: {
-        "/auth": (context) => const AuthPage(),
-        "/home": (context) => HomePage(),
-      },
+      home: StartupPage(),
     );
   }
 }
