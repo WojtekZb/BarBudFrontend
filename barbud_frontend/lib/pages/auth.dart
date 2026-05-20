@@ -84,18 +84,7 @@ Future<void> submit() async {
             padding: const EdgeInsets.symmetric(horizontal: 28),
             child: Column(
               children: [
-                const SizedBox(height: 55),
-
-                const Text(
-                  "BarBud",
-                  style: TextStyle(
-                    fontSize: 48,
-                    fontWeight: FontWeight.w400,
-                    color: Colors.black,
-                  ),
-                ),
-
-                const SizedBox(height: 45),
+                const SizedBox(height: 67),
 
                 AuthCard(
                   isRegister: isRegister,
