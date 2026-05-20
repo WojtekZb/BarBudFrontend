@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:barbud_frontend/services/auth_service.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:barbud_frontend/pages/auth.dart';
-import 'package:barbud_frontend/pages/my_bar.dart';
+import 'package:barbud_frontend/pages/ingredients.dart';
 
 class Drink {
   final String name;
@@ -411,7 +411,7 @@ class BottomNavBar extends StatelessWidget {
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => MyBarPage(),
+                  builder: (context) => IngredientsPage(),
                 ),
               );
             },

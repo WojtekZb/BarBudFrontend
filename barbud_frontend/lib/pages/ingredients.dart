@@ -4,14 +4,14 @@ import 'package:barbud_frontend/services/bar_service.dart';
 
 import '../models/ingredient.dart';
 
-class MyBarPage extends StatefulWidget {
-  const MyBarPage({super.key});
+class IngredientsPage extends StatefulWidget {
+  const IngredientsPage({super.key});
 
   @override
-  State<MyBarPage> createState() => _MyBarPageState();
+  State<IngredientsPage> createState() => _IngredientsPageState();
 }
 
-class _MyBarPageState extends State<MyBarPage> with WidgetsBindingObserver {
+class _IngredientsPageState extends State<IngredientsPage> with WidgetsBindingObserver {
   String searchQuery = "";
   String selectedCategory = "All";
 
@@ -183,7 +183,7 @@ class MyBarHeader extends StatelessWidget {
         border: Border(bottom: BorderSide(color: Colors.black, width: 1.5)),
       ),
       child: const Text(
-        "My Bar",
+        "Ingredients",
         style: TextStyle(fontSize: 34, fontWeight: FontWeight.w400),
       ),
     );
