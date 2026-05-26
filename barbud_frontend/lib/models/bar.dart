@@ -13,7 +13,7 @@ class UserBar {
     return UserBar(
       id: json["id"],
       name: json["name"],
-      ingredientCount: json["ingredientCount"] ?? json["ingredient_count"] ?? 0,
+      ingredientCount: json["amountIngredients"] ?? 0,
     );
   }
 }

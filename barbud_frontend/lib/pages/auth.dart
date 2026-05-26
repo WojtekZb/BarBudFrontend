@@ -2,6 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:barbud_frontend/services/auth_service.dart';
 import 'package:barbud_frontend/pages/home.dart';
 
+bool hasMinLength(String password) => password.length >= 8;
+bool hasUppercase(String password) => RegExp(r'[A-Z]').hasMatch(password);
+bool hasLowercase(String password) => RegExp(r'[a-z]').hasMatch(password);
+bool hasNumber(String password) => RegExp(r'[0-9]').hasMatch(password);
+bool hasSpecialChar(String password) =>
+    RegExp(r'[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\;/`~]').hasMatch(password);
+
+bool isStrongPassword(String password) {
+  return hasMinLength(password) &&
+      hasUppercase(password) &&
+      hasLowercase(password) &&
+      hasNumber(password) &&
+      hasSpecialChar(password);
+}
 
 class AuthPage extends StatefulWidget {
   const AuthPage({super.key});
@@ -30,61 +44,103 @@ class _AuthPageState extends State<AuthPage> {
   void toggleAuthMode() {
     setState(() {
       isRegister = !isRegister;
+      confirmPasswordController.clear();
     });
   }
 
-Future<void> submit() async {
-  try {
-    Map<String, dynamic> result;
+  Future<void> submit() async {
+    final email = emailController.text.trim();
+    final username = usernameController.text.trim();
+    final password = passwordController.text;
+    final confirmPassword = confirmPasswordController.text;
 
-    if (isRegister) {
-      result = await AuthService.register(
-        email: emailController.text,
-        username: usernameController.text,
-        password: passwordController.text,
+    if (email.isEmpty ||
+        password.isEmpty ||
+        (isRegister && username.isEmpty) ||
+        (isRegister && confirmPassword.isEmpty)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please fill in all required fields."),
+        ),
       );
-    } else {
-      result = await AuthService.login(
-        email: emailController.text,
-        password: passwordController.text,
-      );
+      return;
     }
 
-    print("AUTH OK:");
-    print(result);
+    if (isRegister && !isStrongPassword(password)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Password does not meet all requirements."),
+        ),
+      );
+      return;
+    }
 
-    if (!mounted) return;
+    if (isRegister && password != confirmPassword) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Passwords do not match."),
+        ),
+      );
+      return;
+    }
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => HomePage()),
-    );
-  } catch (e) {
-    print("AUTH FAILED:");
-    print(e);
+    try {
+      Map<String, dynamic> result;
 
-    if (!mounted) return;
+      if (isRegister) {
+        result = await AuthService.register(
+          email: email,
+          username: username,
+          password: password,
+        );
+      } else {
+        result = await AuthService.login(
+          email: email,
+          password: password,
+        );
+      }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("Login/Register failed: $e"),
-      ),
-    );
+      print("AUTH OK:");
+
+      if (!mounted) return;
+
+      Navigator.pushReplacementNamed(context, "/home");
+    } catch (e) {
+      print("AUTH FAILED:");
+      print(e);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Login/Register failed: $e"),
+        ),
+      );
+    }
   }
-}
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 28),
             child: Column(
               children: [
-                const SizedBox(height: 67),
+                const SizedBox(height: 55),
+
+                const Text(
+                  "BarBud",
+                  style: TextStyle(
+                    fontSize: 48,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.black,
+                  ),
+                ),
+
+                const SizedBox(height: 45),
 
                 AuthCard(
                   isRegister: isRegister,
@@ -136,7 +192,7 @@ Future<void> submit() async {
   }
 }
 
-class AuthCard extends StatelessWidget {
+class AuthCard extends StatefulWidget {
   final bool isRegister;
 
   final TextEditingController emailController;
@@ -157,7 +213,38 @@ class AuthCard extends StatelessWidget {
   });
 
   @override
+  State<AuthCard> createState() => _AuthCardState();
+}
+
+class _AuthCardState extends State<AuthCard> {
+  @override
+  void initState() {
+    super.initState();
+    widget.passwordController.addListener(_update);
+    widget.confirmPasswordController.addListener(_update);
+  }
+
+  @override
+  void dispose() {
+    widget.passwordController.removeListener(_update);
+    widget.confirmPasswordController.removeListener(_update);
+    super.dispose();
+  }
+
+  void _update() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final password = widget.passwordController.text;
+    final confirmPassword = widget.confirmPasswordController.text;
+
+    final passwordsMatch =
+        password.isNotEmpty && confirmPassword.isNotEmpty && password == confirmPassword;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(22, 28, 22, 28),
@@ -172,20 +259,20 @@ class AuthCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          HeaderSection(isRegister: isRegister),
+          HeaderSection(isRegister: widget.isRegister),
 
           const SizedBox(height: 34),
 
           AuthTextField(
             label: "Email",
-            controller: emailController,
+            controller: widget.emailController,
           ),
 
-          if (isRegister) ...[
+          if (widget.isRegister) ...[
             const SizedBox(height: 24),
             AuthTextField(
               label: "Username",
-              controller: usernameController,
+              controller: widget.usernameController,
             ),
           ],
 
@@ -193,16 +280,30 @@ class AuthCard extends StatelessWidget {
 
           AuthTextField(
             label: "Password",
-            controller: passwordController,
+            controller: widget.passwordController,
             obscureText: true,
           ),
 
-          if (isRegister) ...[
+          if (widget.isRegister) ...[
+            const SizedBox(height: 14),
+
+            PasswordRequirements(
+              password: password,
+            ),
+
             const SizedBox(height: 24),
+
             AuthTextField(
               label: "Confirm password",
-              controller: confirmPasswordController,
+              controller: widget.confirmPasswordController,
               obscureText: true,
+            ),
+
+            const SizedBox(height: 10),
+
+            RequirementRow(
+              text: "Passwords match",
+              passed: passwordsMatch,
             ),
           ],
 
@@ -212,7 +313,7 @@ class AuthCard extends StatelessWidget {
             width: double.infinity,
             height: 58,
             child: OutlinedButton(
-              onPressed: onSubmit,
+              onPressed: widget.onSubmit,
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(
                   color: Colors.black,
@@ -224,12 +325,111 @@ class AuthCard extends StatelessWidget {
                 foregroundColor: Colors.black,
               ),
               child: Text(
-                isRegister ? "Create account" : "Login",
+                widget.isRegister ? "Create account" : "Login",
                 style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                   color: Colors.black,
                 ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class PasswordRequirements extends StatelessWidget {
+  final String password;
+
+  const PasswordRequirements({
+    super.key,
+    required this.password,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: Colors.black,
+          width: 1.4,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "Password requirements",
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
+          ),
+
+          const SizedBox(height: 8),
+
+          RequirementRow(
+            text: "At least 8 characters",
+            passed: hasMinLength(password),
+          ),
+          RequirementRow(
+            text: "At least 1 uppercase letter",
+            passed: hasUppercase(password),
+          ),
+          RequirementRow(
+            text: "At least 1 lowercase letter",
+            passed: hasLowercase(password),
+          ),
+          RequirementRow(
+            text: "At least 1 number",
+            passed: hasNumber(password),
+          ),
+          RequirementRow(
+            text: "At least 1 special character",
+            passed: hasSpecialChar(password),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class RequirementRow extends StatelessWidget {
+  final String text;
+  final bool passed;
+
+  const RequirementRow({
+    super.key,
+    required this.text,
+    required this.passed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Row(
+        children: [
+          Icon(
+            passed ? Icons.check_circle : Icons.radio_button_unchecked,
+            size: 18,
+            color: Colors.black,
+          ),
+
+          const SizedBox(width: 8),
+
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.black,
+                fontWeight: passed ? FontWeight.w600 : FontWeight.w400,
               ),
             ),
           ),
@@ -318,18 +518,18 @@ class AuthTextField extends StatelessWidget {
             controller: controller,
             obscureText: obscureText,
             cursorColor: Colors.black,
-            decoration: InputDecoration(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: const InputDecoration(
+              contentPadding: EdgeInsets.symmetric(horizontal: 12),
               filled: true,
               fillColor: Colors.white,
-              enabledBorder: const OutlineInputBorder(
+              enabledBorder: OutlineInputBorder(
                 borderSide: BorderSide(
                   color: Colors.black,
                   width: 1.8,
                 ),
                 borderRadius: BorderRadius.zero,
               ),
-              focusedBorder: const OutlineInputBorder(
+              focusedBorder: OutlineInputBorder(
                 borderSide: BorderSide(
                   color: Colors.black,
                   width: 2.2,

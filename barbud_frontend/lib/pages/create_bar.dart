@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:barbud_frontend/services/bar_service.dart';
 
 import '../models/ingredient.dart';
-import '../services/bar_service.dart';
 
 class CreateBarPage extends StatefulWidget {
   const CreateBarPage({super.key});
@@ -10,49 +10,78 @@ class CreateBarPage extends StatefulWidget {
   State<CreateBarPage> createState() => _CreateBarPageState();
 }
 
-class _CreateBarPageState extends State<CreateBarPage> {
+class _CreateBarPageState extends State<CreateBarPage>
+    with WidgetsBindingObserver {
   final TextEditingController nameController = TextEditingController();
-  final Set<int> selectedIngredientIds = {};
+  final FocusNode searchFocusNode = FocusNode();
 
-  late Future<List<BarIngredient>> _ingredientsFuture;
+  String searchQuery = "";
+  String selectedCategory = "All";
 
-  bool isSaving = false;
+  final Set<int> selectedIngredients = {};
+  late Future<List<BarIngredient>> ingredientsFuture;
+
+  bool isCreating = false;
 
   @override
   void initState() {
     super.initState();
-    _ingredientsFuture = BarService.getAllIngredients();
+    ingredientsFuture = BarService.getAllIngredients();
+    WidgetsBinding.instance.addObserver(this);
   }
 
   @override
   void dispose() {
     nameController.dispose();
+    searchFocusNode.dispose();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
-  void _toggleIngredient(int id) {
-    setState(() {
-      if (selectedIngredientIds.contains(id)) {
-        selectedIngredientIds.remove(id);
-      } else {
-        selectedIngredientIds.add(id);
-      }
-    });
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      searchFocusNode.unfocus();
+    }
+
+    super.didChangeAppLifecycleState(state);
   }
 
-  Future<void> _createBar() async {
+  List<BarIngredient> getFilteredIngredients(List<BarIngredient> ingredients) {
+    var filtered = ingredients;
+
+    if (selectedCategory != "All") {
+      filtered = filtered
+          .where((ingredient) => ingredient.category == selectedCategory)
+          .toList();
+    }
+
+    if (searchQuery.isNotEmpty) {
+      filtered = filtered
+          .where(
+            (ingredient) => ingredient.name
+                .toLowerCase()
+                .contains(searchQuery.toLowerCase()),
+          )
+          .toList();
+    }
+
+    return filtered;
+  }
+
+  Future<void> createBar() async {
     final name = nameController.text.trim();
 
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("Please give your bar a name."),
+          content: Text("Please enter a bar name."),
         ),
       );
       return;
     }
 
-    if (selectedIngredientIds.isEmpty) {
+    if (selectedIngredients.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Please select at least one ingredient."),
@@ -62,13 +91,13 @@ class _CreateBarPageState extends State<CreateBarPage> {
     }
 
     setState(() {
-      isSaving = true;
+      isCreating = true;
     });
 
     try {
       await BarService.createBar(
         name: name,
-        ingredientIds: selectedIngredientIds.toList(),
+        ingredientIds: selectedIngredients.toList(),
       );
 
       if (!mounted) return;
@@ -85,72 +114,65 @@ class _CreateBarPageState extends State<CreateBarPage> {
     } finally {
       if (mounted) {
         setState(() {
-          isSaving = false;
+          isCreating = false;
         });
       }
     }
   }
 
+  void toggleIngredient(int ingredientId) {
+    setState(() {
+      if (selectedIngredients.contains(ingredientId)) {
+        selectedIngredients.remove(ingredientId);
+      } else {
+        selectedIngredients.add(ingredientId);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F6F1),
+      resizeToAvoidBottomInset: true,
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 12, 18, 10),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Icon(
-                        Icons.arrow_back_rounded,
-                        color: Color(0xFF1D1D1D),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  const Expanded(
-                    child: Text(
-                      "Create Bar",
-                      style: TextStyle(
-                        fontSize: 27,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF1D1D1D),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+            const CreateBarHeader(),
+
+            BarNameField(
+              controller: nameController,
+            ),
+
+            CreateBarSearch(
+              focusNode: searchFocusNode,
+              onChanged: (value) {
+                setState(() {
+                  searchQuery = value;
+                });
+              },
             ),
 
             Expanded(
               child: FutureBuilder<List<BarIngredient>>(
-                future: _ingredientsFuture,
+                future: ingredientsFuture,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(
-                      child: CircularProgressIndicator(),
+                      child: CircularProgressIndicator(color: Colors.black),
                     );
                   }
 
                   if (snapshot.hasError) {
                     return Center(
                       child: Padding(
-                        padding: const EdgeInsets.all(24),
+                        padding: const EdgeInsets.all(20),
                         child: Text(
-                          "Could not load ingredients.\n${snapshot.error}",
+                          "Failed to load ingredients:\n${snapshot.error}",
                           textAlign: TextAlign.center,
                           style: const TextStyle(
-                            color: Colors.redAccent,
+                            color: Colors.black,
+                            fontSize: 15,
                           ),
                         ),
                       ),
@@ -159,148 +181,57 @@ class _CreateBarPageState extends State<CreateBarPage> {
 
                   final ingredients = snapshot.data ?? [];
 
-                  return ListView(
-                    padding: const EdgeInsets.fromLTRB(22, 8, 22, 120),
-                    children: [
-                      const Text(
-                        "Bar name",
+                  final categories = [
+                    "All",
+                    ...ingredients.map((i) => i.category).toSet().toList()
+                      ..sort(),
+                  ];
+
+                  final filteredIngredients =
+                      getFilteredIngredients(ingredients);
+
+                  if (filteredIngredients.isEmpty) {
+                    return const Center(
+                      child: Text(
+                        "No ingredients found.",
                         style: TextStyle(
                           fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF1D1D1D),
+                          color: Colors.black,
                         ),
                       ),
-                      const SizedBox(height: 10),
+                    );
+                  }
 
-                      TextField(
-                        controller: nameController,
-                        decoration: InputDecoration(
-                          hintText: "Example: My Home Bar",
-                          filled: true,
-                          fillColor: Colors.white,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 18,
-                            vertical: 17,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(18),
-                            borderSide: BorderSide.none,
-                          ),
+                  return Column(
+                    children: [
+                      CreateBarCategoryBar(
+                        selectedCategory: selectedCategory,
+                        categories: categories,
+                        onCategorySelected: (category) {
+                          setState(() {
+                            selectedCategory = category;
+                          });
+                        },
+                      ),
+
+                      Expanded(
+                        child: ListView.builder(
+                          padding: const EdgeInsets.fromLTRB(18, 16, 18, 90),
+                          itemCount: filteredIngredients.length,
+                          itemBuilder: (context, index) {
+                            final ingredient = filteredIngredients[index];
+
+                            return CreateBarIngredientCard(
+                              ingredient: ingredient,
+                              selected: selectedIngredients
+                                  .contains(ingredient.id),
+                              onTap: () {
+                                toggleIngredient(ingredient.id);
+                              },
+                            );
+                          },
                         ),
                       ),
-
-                      const SizedBox(height: 26),
-
-                      Row(
-                        children: [
-                          const Expanded(
-                            child: Text(
-                              "Ingredients",
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                                color: Color(0xFF1D1D1D),
-                              ),
-                            ),
-                          ),
-                          Text(
-                            "${selectedIngredientIds.length} selected",
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Color(0xFF77716A),
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      ...ingredients.map((ingredient) {
-                        final selected =
-                            selectedIngredientIds.contains(ingredient.id);
-
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: GestureDetector(
-                            onTap: () => _toggleIngredient(ingredient.id),
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 160),
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: selected
-                                    ? const Color(0xFF1D1D1D)
-                                    : Colors.white,
-                                borderRadius: BorderRadius.circular(20),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.05),
-                                    blurRadius: 14,
-                                    offset: const Offset(0, 7),
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 42,
-                                    height: 42,
-                                    decoration: BoxDecoration(
-                                      color: selected
-                                          ? Colors.white.withOpacity(0.14)
-                                          : const Color(0xFFF2E7D8),
-                                      borderRadius: BorderRadius.circular(15),
-                                    ),
-                                    child: Icon(
-                                      selected
-                                          ? Icons.check_rounded
-                                          : Icons.local_bar_outlined,
-                                      color: selected
-                                          ? Colors.white
-                                          : const Color(0xFF1D1D1D),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 14),
-
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          ingredient.name,
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w800,
-                                            color: selected
-                                                ? Colors.white
-                                                : const Color(0xFF1D1D1D),
-                                          ),
-                                        ),
-                                        if (ingredient.category != null &&
-                                            ingredient.category!.isNotEmpty)
-                                          Padding(
-                                            padding:
-                                                const EdgeInsets.only(top: 4),
-                                            child: Text(
-                                              ingredient.category!,
-                                              style: TextStyle(
-                                                fontSize: 13,
-                                                color: selected
-                                                    ? Colors.white70
-                                                    : const Color(0xFF77716A),
-                                              ),
-                                            ),
-                                          ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      }),
                     ],
                   );
                 },
@@ -311,33 +242,352 @@ class _CreateBarPageState extends State<CreateBarPage> {
       ),
 
       bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(22, 8, 22, 16),
-          child: ElevatedButton(
-            onPressed: isSaving ? null : _createBar,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1D1D1D),
-              foregroundColor: Colors.white,
-              disabledBackgroundColor: Colors.black26,
-              minimumSize: const Size(double.infinity, 56),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              textStyle: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(18, 12, 18, 12),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            border: Border(
+              top: BorderSide(
+                color: Colors.black,
+                width: 1.5,
               ),
             ),
-            child: isSaving
-                ? const SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.5,
-                      color: Colors.white,
+          ),
+          child: SizedBox(
+            height: 52,
+            child: ElevatedButton(
+              onPressed: isCreating ? null : createBar,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black,
+                foregroundColor: Colors.white,
+                disabledBackgroundColor: Colors.black26,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.zero,
+                ),
+              ),
+              child: isCreating
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2.4,
+                      ),
+                    )
+                  : Text(
+                      "Create Bar (${selectedIngredients.length})",
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  )
-                : const Text("Create bar"),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class CreateBarHeader extends StatelessWidget {
+  const CreateBarHeader({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(8, 10, 18, 14),
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: Colors.black, width: 1.5),
+        ),
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            icon: const Icon(
+              Icons.arrow_back,
+              color: Colors.black,
+            ),
+          ),
+
+          const Expanded(
+            child: Text(
+              "Create Bar",
+              style: TextStyle(
+                fontSize: 34,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class BarNameField extends StatelessWidget {
+  final TextEditingController controller;
+
+  const BarNameField({
+    super.key,
+    required this.controller,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: Colors.black, width: 1.3),
+        ),
+      ),
+      child: TextField(
+        controller: controller,
+        cursorColor: Colors.black,
+        decoration: InputDecoration(
+          hintText: "Bar name",
+          hintStyle: const TextStyle(
+            color: Colors.black,
+            fontSize: 15,
+          ),
+          prefixIcon: const Icon(
+            Icons.local_bar_outlined,
+            color: Colors.black,
+          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+          enabledBorder: OutlineInputBorder(
+            borderSide: const BorderSide(
+              color: Colors.black,
+              width: 1.4,
+            ),
+            borderRadius: BorderRadius.circular(0),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderSide: const BorderSide(
+              color: Colors.black,
+              width: 1.8,
+            ),
+            borderRadius: BorderRadius.circular(0),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class CreateBarSearch extends StatelessWidget {
+  final Function(String) onChanged;
+  final FocusNode focusNode;
+
+  const CreateBarSearch({
+    super.key,
+    required this.onChanged,
+    required this.focusNode,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(18, 12, 18, 12),
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: Colors.black, width: 1.3),
+        ),
+      ),
+      child: TextField(
+        focusNode: focusNode,
+        cursorColor: Colors.black,
+        onChanged: onChanged,
+        decoration: InputDecoration(
+          hintText: "Search ingredients",
+          hintStyle: const TextStyle(
+            color: Colors.black,
+            fontSize: 15,
+          ),
+          prefixIcon: const Icon(
+            Icons.search,
+            color: Colors.black,
+          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+          enabledBorder: OutlineInputBorder(
+            borderSide: const BorderSide(
+              color: Colors.black,
+              width: 1.4,
+            ),
+            borderRadius: BorderRadius.circular(0),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderSide: const BorderSide(
+              color: Colors.black,
+              width: 1.8,
+            ),
+            borderRadius: BorderRadius.circular(0),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class CreateBarCategoryBar extends StatelessWidget {
+  final String selectedCategory;
+  final List<String> categories;
+  final Function(String category) onCategorySelected;
+
+  const CreateBarCategoryBar({
+    super.key,
+    required this.selectedCategory,
+    required this.categories,
+    required this.onCategorySelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(18, 10, 18, 10),
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: Colors.black,
+            width: 1.3,
+          ),
+        ),
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: categories.map((category) {
+            return Padding(
+              padding: const EdgeInsets.only(right: 10),
+              child: CreateBarCategoryChip(
+                text: category,
+                selected: selectedCategory == category,
+                onTap: () {
+                  onCategorySelected(category);
+                },
+              ),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+}
+
+class CreateBarCategoryChip extends StatelessWidget {
+  final String text;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const CreateBarCategoryChip({
+    super.key,
+    required this.text,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      splashColor: Colors.transparent,
+      highlightColor: Colors.transparent,
+      child: Container(
+        height: 28,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: selected ? Colors.black : Colors.white,
+          border: Border.all(
+            color: Colors.black,
+            width: 1.3,
+          ),
+        ),
+        child: Text(
+          text,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: selected ? Colors.white : Colors.black,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class CreateBarIngredientCard extends StatelessWidget {
+  final BarIngredient ingredient;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const CreateBarIngredientCard({
+    super.key,
+    required this.ingredient,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: InkWell(
+        onTap: onTap,
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: selected ? Colors.black.withOpacity(0.05) : Colors.white,
+            border: Border.all(
+              color: selected ? Colors.black : Colors.black.withOpacity(0.6),
+              width: selected ? 2.0 : 1.4,
+            ),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      ingredient.name,
+                      style: TextStyle(
+                        fontSize: 19,
+                        fontWeight:
+                            selected ? FontWeight.bold : FontWeight.w500,
+                        color: Colors.black,
+                      ),
+                    ),
+
+                    const SizedBox(height: 6),
+
+                    Text(
+                      ingredient.category,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              Icon(
+                selected ? Icons.check : Icons.add,
+                color: Colors.black,
+                size: 28,
+              ),
+            ],
           ),
         ),
       ),
