@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:barbud_frontend/services/auth_service.dart';
-import 'package:barbud_frontend/pages/home.dart';
 
 bool hasMinLength(String password) => password.length >= 8;
 bool hasUppercase(String password) => RegExp(r'[A-Z]').hasMatch(password);
@@ -85,16 +84,15 @@ class _AuthPageState extends State<AuthPage> {
     }
 
     try {
-      Map<String, dynamic> result;
 
       if (isRegister) {
-        result = await AuthService.register(
+        await AuthService.register(
           email: email,
           username: username,
           password: password,
         );
       } else {
-        result = await AuthService.login(
+        await AuthService.login(
           email: email,
           password: password,
         );

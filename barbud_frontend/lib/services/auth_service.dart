@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class AuthService {
-  static const String baseUrl = "http://localhost:8080";
+  static const String baseUrl = "http://145.220.72.160:8080";
   static const FlutterSecureStorage storage = FlutterSecureStorage();
 
  static Future<void> save(

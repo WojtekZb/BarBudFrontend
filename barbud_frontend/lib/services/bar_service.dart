@@ -8,7 +8,7 @@ import '../models/ingredient.dart';
 import '../models/bar.dart';
 
 class BarService {
-  static const String baseUrl = "http://localhost:8080";
+  static const String baseUrl = "http://145.220.72.160:8080";
 
   static const FlutterSecureStorage storage = FlutterSecureStorage();
 
@@ -74,6 +74,7 @@ class BarService {
   }
 
   static Future<void> createBar({
+    required int userId,
     required String name,
     required List<int> ingredientIds,
   }) async {
@@ -83,6 +84,7 @@ class BarService {
       url,
       headers: await _headers(),
       body: jsonEncode({
+        "userId": userId,
         "name": name,
         "ingredientIds": ingredientIds,
       }),

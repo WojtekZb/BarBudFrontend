@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:barbud_frontend/services/bar_service.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../models/ingredient.dart';
 
@@ -70,7 +71,21 @@ class _CreateBarPageState extends State<CreateBarPage>
   }
 
   Future<void> createBar() async {
+    const FlutterSecureStorage storage = FlutterSecureStorage();
+
+    final userIdString = await storage.read(key: "id");
+    final userId = int.tryParse(userIdString ?? "");
+
     final name = nameController.text.trim();
+
+    if (userId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Could not find your user ID. Please log in again."),
+        ),
+      );
+      return;
+    }
 
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -96,6 +111,7 @@ class _CreateBarPageState extends State<CreateBarPage>
 
     try {
       await BarService.createBar(
+        userId: userId,
         name: name,
         ingredientIds: selectedIngredients.toList(),
       );

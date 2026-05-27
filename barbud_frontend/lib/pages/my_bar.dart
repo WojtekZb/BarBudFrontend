@@ -4,7 +4,6 @@ import 'package:barbud_frontend/pages/home.dart';
 import 'package:barbud_frontend/pages/create_bar.dart';
 import 'package:barbud_frontend/services/bar_service.dart';
 import 'package:barbud_frontend/services/auth_service.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../models/bar.dart';
 
@@ -16,7 +15,6 @@ class MyBarPage extends StatefulWidget {
 }
 
 class _MyBarPageState extends State<MyBarPage> {
-  static const storage = FlutterSecureStorage();
 
   late Future<List<UserBar>> barsFuture;
 
