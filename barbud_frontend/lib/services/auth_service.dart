@@ -28,7 +28,6 @@ class AuthService {
   static Future<void> debugStorage() async {
     print("----- STORAGE DEBUG -----");
     print("id: ${await storage.read(key: "id")}");
-    print("userId: ${await storage.read(key: "userId")}");
     print("username: ${await storage.read(key: "username")}");
     print("accessToken: ${await storage.read(key: "accessToken")}");
     print("refreshToken: ${await storage.read(key: "refreshToken")}");
