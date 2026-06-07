@@ -10,6 +10,10 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: barbud_frontend
+
     steps:
       - name: Checkout frontend repo
         uses: actions/checkout@v4
@@ -38,5 +42,6 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT }}
-          source: "barbud.apk"
+          source: "barbud_frontend/barbud.apk"
           target: "/var/www/barbud/"
+          strip_components: 1
