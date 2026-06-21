@@ -12,6 +12,7 @@ class LoginRobot {
     expect(emailField, findsOneWidget);
 
     await tester.enterText(emailField, email);
+    await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pumpAndSettle();
   }
 
@@ -21,6 +22,7 @@ class LoginRobot {
     expect(passwordField, findsOneWidget);
 
     await tester.enterText(passwordField, password);
+    await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pumpAndSettle();
   }
 

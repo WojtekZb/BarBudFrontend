@@ -110,6 +110,7 @@ class _MyBarPageState extends State<MyBarPage> {
                       final bar = bars[index];
 
                       return BarCard(
+                        cardKey: Key('barDetailsCard_$index'),
                         bar: bar,
                         onTap: () {
                           Navigator.push(
@@ -257,11 +258,13 @@ class EmptyBarsState extends StatelessWidget {
 class BarCard extends StatelessWidget {
   final UserBar bar;
   final VoidCallback onTap;
+  final Key? cardKey;
 
   const BarCard({
     super.key,
     required this.bar,
     required this.onTap,
+    this.cardKey,
   });
 
   @override
@@ -269,6 +272,7 @@ class BarCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: InkWell(
+        key: cardKey,
         onTap: onTap,
         splashColor: Colors.transparent,
         highlightColor: Colors.transparent,

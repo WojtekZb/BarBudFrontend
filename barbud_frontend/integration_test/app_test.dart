@@ -44,7 +44,7 @@ Future<void> waitForWidget(
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('user can login and open My Bars page', (tester) async {
+  testWidgets('user can login and open My Bars page and see bar details', (tester) async {
     await startCleanApp(tester);
     await waitForWidget(
       tester,
@@ -65,11 +65,12 @@ void main() {
     await homeRobot.tapMyBarsButton();
 
     await myBarRobot.expectMyBarPageVisible();
+
+    await myBarRobot.tapBarDetailsCard(0);
   });
 
   testWidgets('user sees error when login credentials are incorrect', (tester) async {
     await startCleanApp(tester);
-
     await waitForWidget(
       tester,
       find.byKey(const Key('emailField')),

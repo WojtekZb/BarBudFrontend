@@ -26,4 +26,13 @@ class MyBarRobot {
     await tester.tap(createBarButton);
     await tester.pump(const Duration(seconds: 1));
   }
+
+  Future<void> tapBarDetailsCard(int barId) async {
+  final barCard = find.byKey(Key('barDetailsCard_$barId'));
+
+  expect(barCard, findsOneWidget);
+
+  await tester.tap(barCard);
+  await tester.pump(const Duration(seconds: 1));
+}
 }
