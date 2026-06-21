@@ -111,7 +111,10 @@ class _AuthPageState extends State<AuthPage> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Login/Register failed: $e"),
+          content: Text(
+            "Login/Register failed: $e",
+            key: const Key('loginErrorMessage'),
+          ),
         ),
       );
     }
@@ -251,6 +254,7 @@ class _AuthCardState extends State<AuthCard> {
           const SizedBox(height: 34),
 
           AuthTextField(
+            fieldKey: const Key('emailField'),
             label: "Email",
             controller: widget.emailController,
           ),
@@ -266,6 +270,7 @@ class _AuthCardState extends State<AuthCard> {
           const SizedBox(height: 24),
 
           AuthTextField(
+            fieldKey: const Key('passwordField'),
             label: "Password",
             controller: widget.passwordController,
             obscureText: true,
@@ -300,6 +305,7 @@ class _AuthCardState extends State<AuthCard> {
             width: double.infinity,
             height: 58,
             child: OutlinedButton(
+              key: const Key('loginButton'),
               onPressed: widget.onSubmit,
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(
@@ -319,7 +325,7 @@ class _AuthCardState extends State<AuthCard> {
                   color: Colors.black,
                 ),
               ),
-            ),
+            )
           ),
         ],
       ),
@@ -476,12 +482,14 @@ class AuthTextField extends StatelessWidget {
   final String label;
   final bool obscureText;
   final TextEditingController controller;
+  final Key? fieldKey;
 
   const AuthTextField({
     super.key,
     required this.label,
     required this.controller,
     this.obscureText = false,
+    this.fieldKey,
   });
 
   @override
@@ -502,6 +510,7 @@ class AuthTextField extends StatelessWidget {
         SizedBox(
           height: 52,
           child: TextField(
+            key: fieldKey,
             controller: controller,
             obscureText: obscureText,
             cursorColor: Colors.black,

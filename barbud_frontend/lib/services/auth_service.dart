@@ -93,9 +93,15 @@ class AuthService {
       }),
     );
 
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+
     if (response.statusCode == 200) {
 
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      if (data['userId'] == 0 ||
+        data['accessToken'] == null ||
+        data['accessToken'].toString().isEmpty) {
+          throw Exception(data['message'] ?? 'Invalid email or password');
+      }
 
       await save(data, "userId", "id");
       await save(data, "username", "username");

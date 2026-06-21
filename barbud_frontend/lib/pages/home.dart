@@ -45,6 +45,7 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: const Key('homePage'),
       backgroundColor: Colors.white,
 
       drawer: const UserDrawer(),
@@ -385,6 +386,7 @@ class BottomNavBar extends StatelessWidget {
       child: Row(
         children: [
           BottomNavItem(
+            itemKey: const Key('profileButton'),
             icon: Icons.person_outline,
             label: "Profile",
             selected: false,
@@ -403,6 +405,7 @@ class BottomNavBar extends StatelessWidget {
           ),
 
           BottomNavItem(
+            itemKey: const Key('myBarsButton'),
             icon: Icons.countertops_outlined,
             label: "My Bar",
             selected: false,
@@ -428,6 +431,7 @@ class BottomNavItem extends StatelessWidget {
   final bool selected;
   final bool hasRightBorder;
   final VoidCallback onTap;
+  final Key? itemKey;
 
   const BottomNavItem({
     super.key,
@@ -436,12 +440,14 @@ class BottomNavItem extends StatelessWidget {
     required this.selected,
     required this.hasRightBorder,
     required this.onTap,
+    this.itemKey,
   });
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
       child: InkWell(
+        key: itemKey,
         onTap: onTap,
         splashColor: Colors.transparent,
         highlightColor: Colors.transparent,
@@ -641,6 +647,7 @@ class UserDrawer extends StatelessWidget {
                 width: double.infinity,
                 height: 54,
                 child: OutlinedButton(
+                  key: const Key('logoutButton'),
                   onPressed: () => logout(context),
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(

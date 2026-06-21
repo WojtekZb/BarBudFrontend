@@ -60,6 +60,7 @@ class _MyBarPageState extends State<MyBarPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: const Key('myBarPage'),
       backgroundColor: Colors.white,
       drawer: const UserDrawer(),
       body: SafeArea(
@@ -97,6 +98,7 @@ class _MyBarPageState extends State<MyBarPage> {
 
                   if (bars.isEmpty) {
                     return EmptyBarsState(
+                      key: const Key('createBarButton'),
                       onCreatePressed: openCreateBarPage,
                     );
                   }
@@ -202,6 +204,7 @@ class EmptyBarsState extends StatelessWidget {
 
             const Text(
               "You have no bars yet",
+              key: const Key('noBarsMessage'),
               style: TextStyle(
                 fontSize: 25,
                 fontWeight: FontWeight.bold,
