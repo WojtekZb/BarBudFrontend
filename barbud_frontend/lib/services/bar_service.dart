@@ -8,7 +8,7 @@ import '../models/ingredient.dart';
 import '../models/bar.dart';
 
 class BarService {
-  static const String baseUrl = "http://145.220.72.160:8080";
+  static const String baseUrl = "http://192.168.1.172:8080";
 
   static const FlutterSecureStorage storage = FlutterSecureStorage();
 
