@@ -7,41 +7,43 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
-
     defaults:
       run:
         working-directory: barbud_frontend
-
     steps:
-      - name: Checkout frontend repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@v2
         with:
           channel: stable
 
-      - name: Check Flutter version
-        run: flutter --version
+      - run: flutter pub get
+      - run: flutter build apk --release
+      - run: cp build/app/outputs/flutter-apk/app-release.apk barbud.apk
 
-      - name: Install dependencies
-        run: flutter pub get
-
-      - name: Build APK
-        run: flutter build apk --release
-
-      - name: Rename APK
-        run: cp build/app/outputs/flutter-apk/app-release.apk barbud.apk
-
-      - name: Upload APK to VM
-        uses: appleboy/scp-action@v0.1.7
+      - name: Upload APK as artifact
+        uses: actions/upload-artifact@v4
         with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          port: ${{ secrets.SERVER_PORT }}
-          source: "barbud_frontend/barbud.apk"
-          target: "/var/www/barbud/"
-          strip_components: 1
+          name: barbud-apk
+          path: barbud_frontend/barbud.apk
+          retention-days: 7
+
+  deploy:
+    needs: build
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: barbud-apk
+          path: dist
+
+      - name: Publish to nginx web root
+        run: |
+          install -m 644 dist/barbud.apk /var/www/barbud/barbud.apk
+          install -m 644 website/downloadPage.html /var/www/barbud/index.html
+          install -m 644 website/downloadApp.html /var/www/barbud/downloadApp.html
