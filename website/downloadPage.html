@@ -85,7 +85,9 @@
             flex-wrap: wrap;
         }
 
-        button {
+        .btn {
+            display: inline-block;
+            text-decoration: none;
             font-family: inherit;
             font-size: 1.1em;
             font-weight: bold;
@@ -100,17 +102,17 @@
             transition: transform 0.1s ease;
         }
 
-        button:nth-of-type(2) {
+        .btn:nth-of-type(2) {
             background: linear-gradient(180deg, #ff5e5e 0%, #c40000 100%);
             transform: rotate(2deg);
         }
 
-        button:hover {
+        .btn:hover {
             transform: rotate(0deg) scale(1.08);
             box-shadow: 6px 6px 0 #000;
         }
 
-        button:active {
+        .btn:active {
             transform: translate(3px, 3px);
             box-shadow: 1px 1px 0 #000;
         }
@@ -161,8 +163,8 @@
         <h2>BarBud is a app for people that want to make their home feel like a bar. The app allows for easy search for recipes and managing your own bar.</h2>
 
         <div class="buttons">
-            <button>⬇ Download for android</button>
-            <button>⬇ Download for IOS</button>
+            <a class="btn" href="downloadApp.html">⬇ Download for android</a>
+            <a class="btn" href="downloadApp.html">⬇ Download for IOS</a>
         </div>
 
         <div class="warning">
